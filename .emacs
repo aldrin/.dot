@@ -1,13 +1,14 @@
-;;; .emacs --- emacs init file
+;;; .emacs --- emacs initialization file
+;;;
+;;; Author: Aldrin John D'Souza
 ;;;
 ;;; Commentary:
 ;;;
-;;; This file sets the common baseline I assume to be present in all
-;;; Emacs instances I work with.  There is little effort put into
-;;; making these compatible with legacy versions of Emacs and assume
-;;; that the we're on 26 or above.  My primary workspace is macOS and
-;;; that is all I've tested so far, so there may be rough edges on
-;;; other Linux and Windows.
+;;; The baseline configuration for all *my* Emacs setups.  My primary
+;;; workspace is the latest Emacs running on the latest macOS.  There
+;;; is very little effort put into making these work on other
+;;; operation systems (particularly Windows) or with older Emacs
+;;; versions.
 ;;;
 ;;; Code:
 
@@ -21,100 +22,152 @@
   (progn (package-refresh-contents)
          (package-install 'use-package)))
 (eval-when-compile (require 'use-package))
+(setq use-package-always-ensure t)
+(setq use-package-always-defer t)
+
+;; Local customizations
+(setq custom-file "~/.custom.el")
+(when (file-exists-p custom-file) (load custom-file))
 
 ;; Packages
-(use-package better-defaults
-  :ensure t)
+(use-package magit)
 
-(use-package magit
-  :ensure t)
+(use-package better-defaults :demand t)
 
 (use-package drag-stuff
-  :ensure t
+  :demand t
   :config
   (drag-stuff-global-mode 1)
   (drag-stuff-define-keys))
 
 (use-package exec-path-from-shell
   :if (memq window-system '(mac ns))
-  :ensure t
+  :demand t
   :config
   (exec-path-from-shell-initialize))
 
-(use-package spacemacs-common
-  :if window-system
-  :ensure spacemacs-theme
-  :config (load-theme 'spacemacs-light t))
+(use-package super-save
+  :demand t
+  :config
+  (add-to-list 'super-save-hook-triggers 'focus-out-hook)
+  (super-save-mode 1))
 
-(use-package smart-mode-line
-  :if window-system
-  :ensure t
-  :init (setq sml/no-confirm-load-theme t)
-  :config (sml/setup))
+(use-package doom-themes
+  :if (display-graphic-p)
+  :demand t
+  :config
+  (load-theme 'doom-nord-light t)
+  (doom-themes-org-config))
+
+(use-package doom-modeline
+  :demand t
+  :hook (after-init . doom-modeline-mode))
 
 (use-package flycheck
-  :ensure t
   :init (global-flycheck-mode))
 
 (use-package osx-clipboard
   :if (memq window-system '(mac ns))
-  :ensure t :config (osx-clipboard-mode +1))
+  :config (osx-clipboard-mode +1))
 
 (use-package markdown-mode
-  :ensure t
-  :mode ("\\.md\\'" . markdown-mode)
-  :config
-  (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode)))
+  :custom
+  (markdown-header-scaling t)
+  :mode ("\\.md$" . gfm-mode))
 
+(use-package web-mode
+  :mode (("\\.html$" . web-mode)))
+
+(use-package yaml-mode
+  :mode (("\\.y?ml$" . yaml-mode)))
+
+(use-package mixed-pitch)
+
+(use-package writeroom-mode)
+
+;; Org mode.
 (use-package org
-  :ensure t
-  :defer 1
+  :custom
+  (org-hide-leading-stars t)
+  (org-src-fontify-natively t)
+  (org-hide-emphasis-markers t)
+  :custom-face
+  (org-level-1 ((t (:inherit outline-1 :height 1.2))))
+  (org-level-2 ((t (:inherit outline-2 :height 1.1))))
   :config
-  (setq org-src-fontify-natively t)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((shell . t))))
 
-(use-package web-mode
-  :ensure t
-  :mode (("\\.html$" . web-mode)))
+;; Use bullets, instead of asterisks.
+(use-package org-bullets
+  :custom
+  (org-bullets-bullet-list '("⊚" "●" "○"))
+  :hook
+  (org-mode . (lambda () (org-bullets-mode 1))))
 
-(use-package yaml-mode
-  :ensure t
-  :mode (("\\.y?ml$" . yaml-mode)))
+;; Presentations
+(use-package org-present
+  :config
+  (add-hook 'org-present-mode-hook
+            (lambda ()
+              (org-present-big)
+              (org-display-inline-images)
+              (org-present-hide-cursor)
+              (org-present-read-only))))
 
-;; Standard Settings
-(setq fill-column 100)
-(setq backup-by-copying t)
-(setq create-lockfiles nil)
-(setq make-backup-files nil)
-(setq auto-save-default nil)
-(setq inhibit-startup-screen t)
-(setq show-trailing-whitespace t)
-(setq ring-bell-function 'ignore)
-(setq initial-scratch-message nil)
+;; Rust
+(use-package rust-mode
+  :config
+  (setq rust-format-on-save t))
 
-;; Standard Modes
-(show-paren-mode 1)
-(electric-pair-mode t)
-(column-number-mode 1)
-(global-auto-revert-mode 1)
+;; Global
+(defun ajd/everywhere ()
+  "Settings we want everywhere."
 
-;; Hooks, etc.
-(add-hook 'text-mode-hook 'flyspell-mode)
-(add-hook 'prog-mode-hook 'flyspell-prog-mode)
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+  ;; Enable modes
+  (show-paren-mode 1)
+  (electric-pair-mode t)
+  (column-number-mode 1)
+  (global-auto-revert-mode 1)
 
-;; Miscellaneous
-(prefer-coding-system 'utf-8)
-(defalias 'yes-or-no-p 'y-or-n-p)
-(set-language-environment "UTF-8")
-(set-default-coding-systems 'utf-8)
+  ;; Latest features
+  (when (>= emacs-major-version 26)
+    (pixel-scroll-mode))
 
-;; Local customizations
-(setq custom-file (concat user-emacs-directory ".custom.el"))
-(when (file-exists-p custom-file)
-  (load custom-file))
+  ;; Change defaults
+  (setq auto-save-default nil)
+  (setq-default fill-column 100)
+  (setq inhibit-startup-screen t)
+  (setq show-trailing-whitespace t)
+  (defalias 'yes-or-no-p 'y-or-n-p)
+  (setq ring-bell-function 'ignore)
+  (setq initial-scratch-message nil)
+  ;; Hooks
+  (add-hook 'text-mode-hook 'flyspell-mode)
+  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+  ;; Key bindings
+  (global-set-key (kbd "M-c") 'compile))
+
+;; Terminal
+(defun ajd/terminal ()
+  "Settings for when we're running in a terminal."
+  (global-set-key (kbd "ESC <up>") 'drag-stuff-up)
+  (global-set-key (kbd "ESC <down>") 'drag-stuff-down))
+
+;; Graphical
+(defun ajd/graphical ()
+  "Settings for when we're running in full graphical mode."
+  (add-hook 'text-mode-hook 'mixed-pitch-mode)
+  (when (memq window-system '(mac ns))
+    (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t)))
+  (global-hl-line-mode 1))
+
+;; Apply, as appropriate.
+(ajd/everywhere)
+(if (display-graphic-p) (ajd/graphical) (ajd/terminal))
 
 ;; Done
 (provide '.emacs)

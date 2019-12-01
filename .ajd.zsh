@@ -6,6 +6,6 @@ antigen bundle command-not-found
 antigen bundle zsh-users/zsh-syntax-highlighting
 antigen apply
 
-# My humble functions
+# Zsh functions
 fpath=($HOME/.zfn $fpath)
 autoload -U $fpath[1]/*(.:t)
