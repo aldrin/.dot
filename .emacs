@@ -56,12 +56,17 @@
   :if (display-graphic-p)
   :demand t
   :config
-  (load-theme 'doom-nord-light t)
+  (load-theme 'doom-challenger-deep t)
   (doom-themes-org-config))
 
 (use-package doom-modeline
   :demand t
   :hook (after-init . doom-modeline-mode))
+
+(use-package all-the-icons-dired
+  :demand t
+  :config
+  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 
 (use-package flycheck
   :init (global-flycheck-mode))
@@ -81,9 +86,13 @@
 (use-package yaml-mode
   :mode (("\\.y?ml$" . yaml-mode)))
 
+(use-package htmlize)
+
 (use-package mixed-pitch)
 
 (use-package writeroom-mode)
+
+(use-package ns-auto-titlebar)
 
 ;; Org mode.
 (use-package org
@@ -91,6 +100,7 @@
   (org-hide-leading-stars t)
   (org-src-fontify-natively t)
   (org-hide-emphasis-markers t)
+  (org-confirm-babel-evaluate nil)
   :custom-face
   (org-level-1 ((t (:inherit outline-1 :height 1.2))))
   (org-level-2 ((t (:inherit outline-2 :height 1.1))))
@@ -102,19 +112,19 @@
 ;; Use bullets, instead of asterisks.
 (use-package org-bullets
   :custom
-  (org-bullets-bullet-list '("⊚" "●" "○"))
-  :hook
-  (org-mode . (lambda () (org-bullets-mode 1))))
+  (org-bullets-bullet-list '("●" "○"))
+  :init
+  (add-hook 'org-mode-hook 'org-bullets-mode))
+
+;; Github flavored markdown
+(use-package ox-gfm)
 
 ;; Presentations
-(use-package org-present
-  :config
-  (add-hook 'org-present-mode-hook
-            (lambda ()
-              (org-present-big)
-              (org-display-inline-images)
-              (org-present-hide-cursor)
-              (org-present-read-only))))
+(use-package org-tree-slide
+   :ensure t
+   :init
+   (setq org-tree-slide-skip-outline-level 4)
+   (org-tree-slide-simple-profile))
 
 ;; Rust
 (use-package rust-mode
@@ -160,9 +170,8 @@
 ;; Graphical
 (defun ajd/graphical ()
   "Settings for when we're running in full graphical mode."
-  (add-hook 'text-mode-hook 'mixed-pitch-mode)
-  (when (memq window-system '(mac ns))
-    (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t)))
+  (add-hook 'org-mode-hook 'mixed-pitch-mode)
+  (when (eq system-type 'darwin) (ns-auto-titlebar-mode))
   (global-hl-line-mode 1))
 
 ;; Apply, as appropriate.
