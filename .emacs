@@ -100,14 +100,13 @@
   (org-hide-leading-stars t)
   (org-src-fontify-natively t)
   (org-hide-emphasis-markers t)
-  (org-confirm-babel-evaluate nil)
   :custom-face
   (org-level-1 ((t (:inherit outline-1 :height 1.2))))
   (org-level-2 ((t (:inherit outline-2 :height 1.1))))
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages
-   '((shell . t))))
+   '((shell . t) (python . t))))
 
 ;; Use bullets, instead of asterisks.
 (use-package org-bullets
@@ -116,9 +115,6 @@
   :init
   (add-hook 'org-mode-hook 'org-bullets-mode))
 
-;; Github flavored markdown
-(use-package ox-gfm)
-
 ;; Presentations
 (use-package org-tree-slide
    :ensure t
@@ -126,10 +122,25 @@
    (setq org-tree-slide-skip-outline-level 4)
    (org-tree-slide-simple-profile))
 
+;; Markdown
+(use-package ox-gfm)
+
 ;; Rust
 (use-package rust-mode
   :config
   (setq rust-format-on-save t))
+
+;; Terraform
+(use-package terraform-mode
+  :mode ("\\.tf$" . terraform-mode)
+  :config
+  (add-hook 'terraform-mode-hook #'terraform-format-on-save-mode))
+
+;; Python format
+(use-package blacken
+  :demand t
+  :config
+  (add-hook 'python-mode-hook 'blacken-mode))
 
 ;; Global
 (defun ajd/everywhere ()
@@ -139,7 +150,17 @@
   (show-paren-mode 1)
   (electric-pair-mode t)
   (column-number-mode 1)
+  (delete-selection-mode t)
   (global-auto-revert-mode 1)
+
+  ;; Times
+  (setq display-time-world-list
+        '(("Asia/Calcutta" "India")
+          ("UTC" "UTC")
+          ("America/New_York" "Eastern")
+          ("America/Chicago" "Central")
+          ("America/Denver" "Mountain")
+          ("America/Los_Angeles" "Pacific")))
 
   ;; Latest features
   (when (>= emacs-major-version 26)
@@ -172,12 +193,16 @@
   "Settings for when we're running in full graphical mode."
   (add-hook 'org-mode-hook 'mixed-pitch-mode)
   (when (eq system-type 'darwin) (ns-auto-titlebar-mode))
+  (linum-mode 1)
   (global-hl-line-mode 1))
 
 ;; Apply, as appropriate.
 (ajd/everywhere)
 (if (display-graphic-p) (ajd/graphical) (ajd/terminal))
 
+;; org-mode deserves its own file
+(setq org-file "~/.org.el")
+(when (file-exists-p org-file) (load org-file))
 ;; Done
 (provide '.emacs)
 ;;; .emacs ends here
