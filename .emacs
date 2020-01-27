@@ -30,7 +30,7 @@
 (when (file-exists-p custom-file) (load custom-file))
 
 ;; Packages
-(use-package magit)
+(use-package magit :demand t)
 
 (use-package better-defaults :demand t)
 
@@ -94,19 +94,9 @@
 
 (use-package ns-auto-titlebar)
 
-;; Org mode.
-(use-package org
+(use-package load-dir
   :custom
-  (org-hide-leading-stars t)
-  (org-src-fontify-natively t)
-  (org-hide-emphasis-markers t)
-  :custom-face
-  (org-level-1 ((t (:inherit outline-1 :height 1.2))))
-  (org-level-2 ((t (:inherit outline-2 :height 1.1))))
-  :config
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((shell . t) (python . t))))
+  (load-dirs "~/.elisp"))
 
 ;; Use bullets, instead of asterisks.
 (use-package org-bullets
@@ -117,13 +107,16 @@
 
 ;; Presentations
 (use-package org-tree-slide
-   :ensure t
-   :init
-   (setq org-tree-slide-skip-outline-level 4)
+  :custom
+  (org-tree-slide-skip-outline-level 4)
+  :config
    (org-tree-slide-simple-profile))
 
 ;; Markdown
 (use-package ox-gfm)
+(use-package org-ref :demand t
+  :custom
+  (reftex-default-bibliography '("~/references.bib")))
 
 ;; Rust
 (use-package rust-mode
@@ -141,6 +134,10 @@
   :demand t
   :config
   (add-hook 'python-mode-hook 'blacken-mode))
+
+;; Bury successful build logs
+(use-package bury-successful-compilation :demand t)
+(use-package toml-mode :demand t)
 
 ;; Global
 (defun ajd/everywhere ()
@@ -191,18 +188,16 @@
 ;; Graphical
 (defun ajd/graphical ()
   "Settings for when we're running in full graphical mode."
+  (add-hook 'prog-mode-hook 'linum-mode)
   (add-hook 'org-mode-hook 'mixed-pitch-mode)
   (when (eq system-type 'darwin) (ns-auto-titlebar-mode))
-  (linum-mode 1)
   (global-hl-line-mode 1))
 
 ;; Apply, as appropriate.
+(load-dirs)
 (ajd/everywhere)
 (if (display-graphic-p) (ajd/graphical) (ajd/terminal))
 
-;; org-mode deserves its own file
-(setq org-file "~/.org.el")
-(when (file-exists-p org-file) (load org-file))
 ;; Done
 (provide '.emacs)
 ;;; .emacs ends here
